@@ -1,2 +1,10 @@
 /.idea/
-/.agents/
+/.agents/skills/
+/.agents/skills-lock.json
+
+/target/
+/.tools/
+/runtime/
+/.env
+/.env.*
+/*secret*.json

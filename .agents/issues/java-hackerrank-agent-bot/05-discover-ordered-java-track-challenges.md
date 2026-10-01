@@ -6,10 +6,16 @@
 
 ## Acceptance criteria
 
-- [ ] Fixtures verify ordered discovery across pagination or lazy loading.
-- [ ] Duplicate challenge links are removed by stable identity.
-- [ ] Empty or inaccessible tracks and bounded navigation failures are reported explicitly.
-- [ ] Discovery does not introduce contest or assessment navigation.
+- [x] Fixtures verify ordered discovery across pagination or lazy loading.
+- [x] Duplicate challenge links are removed by stable identity.
+- [x] Empty or inaccessible tracks and bounded navigation failures are reported explicitly.
+- [x] Discovery does not introduce contest or assessment navigation.
+
+## Implementation status
+
+Offline acceptance verified by `BrowserFixtureTest`: pagination plus lazy loading, stable order,
+duplicate removal, empty-track pause, and practice URL restrictions. Live track selectors and
+full coverage remain unverified pending an authorized session.
 
 ## Blocked by
 

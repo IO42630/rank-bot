@@ -6,11 +6,17 @@
 
 ## Acceptance criteria
 
-- [ ] Editor-native insertion or Selenium fallback inserts source and verifies editor contents.
-- [ ] Fixtures distinguish sample pass, compile error, runtime error, and wrong answer.
-- [ ] Available failure feedback is captured for a later retry.
-- [ ] Missing editors and sample timeouts fail within bounded waits.
-- [ ] Sample execution never triggers submission.
+- [x] Editor-native insertion or Selenium fallback inserts source and verifies editor contents.
+- [x] Fixtures distinguish sample pass, compile error, runtime error, and wrong answer.
+- [x] Available failure feedback is captured for a later retry.
+- [x] Missing editors and sample timeouts fail within bounded waits.
+- [x] Sample execution never triggers submission.
+
+## Implementation status
+
+Offline acceptance verified by `BrowserFixtureTest` and `JavaContractsTest`, including exact
+editor readback, fresh-result observation, stale-pass rejection, and starter signature checks.
+Live editor APIs and sample feedback selectors remain unverified pending authorized inspection.
 
 ## Blocked by
 

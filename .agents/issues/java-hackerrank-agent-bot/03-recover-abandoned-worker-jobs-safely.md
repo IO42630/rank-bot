@@ -6,10 +6,16 @@
 
 ## Acceptance criteria
 
-- [ ] Heartbeats maintain active leases.
-- [ ] Worker termination or a missed heartbeat produces a bounded terminal outcome.
-- [ ] Crash and timeout tests reject late or mismatched results.
-- [ ] An expired attempt cannot be reclaimed indefinitely.
+- [x] Heartbeats maintain active leases.
+- [x] Worker termination or a missed heartbeat produces a bounded terminal outcome.
+- [x] Crash and timeout tests reject late or mismatched results.
+- [x] An expired attempt cannot be reclaimed indefinitely.
+
+## Implementation status
+
+Offline acceptance verified by `JobStoreTest`, `LocalAgentRunnerTest`, and `FileSolverTest`.
+Includes an exited worker JVM, lease expiry, and rejection of late completion. Hard-killed agent
+descendants require an external restricted runtime with its own lifetime limits, as documented.
 
 ## Blocked by
 

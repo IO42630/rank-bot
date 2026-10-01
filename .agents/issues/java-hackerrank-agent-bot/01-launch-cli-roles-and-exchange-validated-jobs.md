@@ -7,11 +7,16 @@
 
 ## Acceptance criteria
 
-- [ ] Temporary-directory tests verify request and result round-trips with schema and identity validation.
-- [ ] Atomic publishing and claiming prevent partial reads and duplicate claims.
-- [ ] Invalid schemas, mismatched identities, oversized payloads, and empty or fenced successful source are rejected.
-- [ ] Invalid configuration reports a clear error.
-- [ ] A secret-free example configuration and runtime-data exclusions are documented.
+- [x] Temporary-directory tests verify request and result round-trips with schema and identity validation.
+- [x] Atomic publishing and claiming prevent partial reads and duplicate claims.
+- [x] Invalid schemas, mismatched identities, oversized payloads, and empty or fenced successful source are rejected.
+- [x] Invalid configuration reports a clear error.
+- [x] A secret-free example configuration and runtime-data exclusions are documented.
+
+## Implementation status
+
+Offline acceptance verified by `JobStoreTest`, `CliTest`, and `RunCheckpointTest`.
+Atomic snapshots are serialized under a local OS file lock; independent-JVM tests verify exclusive claims.
 
 ## Blocked by
 

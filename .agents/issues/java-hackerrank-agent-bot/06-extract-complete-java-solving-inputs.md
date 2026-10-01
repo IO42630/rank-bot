@@ -2,18 +2,27 @@
 
 ## What to build
 
-- Extract a challenge statement into a complete structured solver request with its selected Java variant and starter contract.
+- Extract a challenge statement into a complete structured solver request with its selected Java variant and starter
+  contract.
 
 ## Acceptance criteria
 
-- [ ] Fixtures preserve the statement, input/output formats, constraints, and examples.
-- [ ] The selected Java variant and starter class or method signatures are preserved.
-- [ ] Missing Java support or incomplete extraction produces a structured unsupported or error outcome.
-- [ ] Incomplete content is never sent as a misleading solver request.
+- [x] Fixtures preserve the statement, input/output formats, constraints, and examples.
+- [x] The selected Java variant and starter class or method signatures are preserved.
+- [x] Missing Java support or incomplete extraction produces a structured unsupported or error outcome.
+- [x] Incomplete content is never sent as a misleading solver request.
+
+## Implementation status
+
+Offline acceptance verified by `BrowserFixtureTest` and `JavaContractsTest`.
+Standard select controls and observable editor APIs are supported; current HackerRank custom
+language controls and extraction selectors require authorized inspection before live readiness.
+Incomplete extraction pauses orchestration rather than spending attempts on guessed inputs.
 
 ## Blocked by
 
-- [04](04-open-browser-with-manual-authentication-handoff.md) supplies browser navigation; track discovery is not required for fixture URLs.
+- [04](04-open-browser-with-manual-authentication-handoff.md) supplies browser navigation; track discovery is not
+  required for fixture URLs.
 
 ## External gates
 

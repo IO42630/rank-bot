@@ -6,12 +6,18 @@
 
 ## Acceptance criteria
 
-- [ ] Approval is required by default.
-- [ ] Approval rejection skips the challenge without submitting.
-- [ ] Automatic mode submits only after successful samples.
-- [ ] Submission intent is persisted before the submit action.
-- [ ] Fixtures distinguish accepted, failed, pending, and unknown verdicts.
-- [ ] Unknown outcomes pause without blind resubmission.
+- [x] Approval is required by default.
+- [x] Approval rejection skips the challenge without submitting.
+- [x] Automatic mode submits only after successful samples.
+- [x] Submission intent is persisted before the submit action.
+- [x] Fixtures distinguish accepted, failed, pending, and unknown verdicts.
+- [x] Unknown outcomes pause without blind resubmission.
+
+## Implementation status
+
+Offline acceptance verified by `SubmissionGuardTest`, `BrowserFixtureTest`, `CliTest`, and
+`ChallengeRunnerTest`. Current submission/verdict UI is not live verified: the fixture evidence
+adapter must be mapped to equivalent live UI evidence during authorized inspection.
 
 ## Blocked by
 

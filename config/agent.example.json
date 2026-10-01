@@ -1,0 +1,5 @@
+{
+  "command": ["/absolute/path/to/your-agent-wrapper", "{request}", "{result}"],
+  "timeoutSeconds": 180,
+  "maxLogBytes": 65536
+}

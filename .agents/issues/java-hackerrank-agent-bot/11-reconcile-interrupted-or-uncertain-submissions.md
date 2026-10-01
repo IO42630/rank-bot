@@ -6,9 +6,15 @@
 
 ## Acceptance criteria
 
-- [ ] Fixtures reconcile matching platform status or history to accepted, failed, or still-pending outcomes.
-- [ ] Missing or ambiguous evidence pauses for manual resolution.
-- [ ] Timeout and restart tests verify that reconciliation does not duplicate a submission.
+- [x] Fixtures reconcile matching platform status or history to accepted, failed, or still-pending outcomes.
+- [x] Missing or ambiguous evidence pauses for manual resolution.
+- [x] Timeout and restart tests verify that reconciliation does not duplicate a submission.
+
+## Implementation status
+
+Offline acceptance verified by `BrowserFixtureTest` and `ChallengeRunnerTest`.
+The live submission/history adapter is incomplete until authorized UI inspection maps unique
+identity and source/time evidence. Missing or ambiguous evidence pauses; it never resubmits.
 
 ## Blocked by
 

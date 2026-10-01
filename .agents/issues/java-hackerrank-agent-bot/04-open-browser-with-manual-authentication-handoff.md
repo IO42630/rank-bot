@@ -6,10 +6,16 @@
 
 ## Acceptance criteria
 
-- [ ] Local fixtures verify authenticated navigation and manual-login handoff.
-- [ ] Session expiry pauses the workflow for user assistance.
-- [ ] CAPTCHA, access restrictions, and throttling pause without bypass or aggressive retries.
-- [ ] Shutdown is clean, and profiles or diagnostics do not expose credentials or cookies.
+- [x] Local fixtures verify authenticated navigation and manual-login handoff.
+- [x] Session expiry pauses the workflow for user assistance.
+- [x] CAPTCHA, access restrictions, and throttling pause without bypass or aggressive retries.
+- [x] Shutdown is clean, and profiles or diagnostics do not expose credentials or cookies.
+
+## Implementation status
+
+Offline acceptance verified by `BrowserFixtureTest` using real Chrome against local HTML.
+The application opens visible Chrome with a private profile; tests alone use headless mode.
+Live access-check selectors and authorized login remain unverified pending user-provided access.
 
 ## Blocked by
 

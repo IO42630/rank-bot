@@ -7,13 +7,18 @@
 
 ## Acceptance criteria
 
-- [ ] A fake agent receives the statement, starter code, platform Java version, deadline, and previous feedback.
-- [ ] A fake agent can return valid Java source without Markdown fences.
-- [ ] Explicit executable and argument configuration avoids shell interpolation.
-- [ ] Malformed or missing output, nonzero exit, and hangs produce terminal outcomes with bounded logs.
-- [ ] Timeout handling cleans up the child process.
-- [ ] Documentation explains the adapter, scratch directory, and limited environment.
-- [ ] Documentation states that a subprocess is not a security sandbox and browser credentials are not passed to it.
+- [x] A fake agent receives the statement, starter code, platform Java version, deadline, and previous feedback.
+- [x] A fake agent can return valid Java source without Markdown fences.
+- [x] Explicit executable and argument configuration avoids shell interpolation.
+- [x] Malformed or missing output, nonzero exit, and hangs produce terminal outcomes with bounded logs.
+- [x] Timeout handling cleans up the child process.
+- [x] Documentation explains the adapter, scratch directory, and limited environment.
+- [x] Documentation states that a subprocess is not a security sandbox and browser credentials are not passed to it.
+
+## Implementation status
+
+Offline acceptance verified by `LocalAgentRunnerTest`, including the worker CLI and fake executable.
+Real-agent smoke testing awaits a user-configured wrapper; no particular agent CLI is assumed.
 
 ## Blocked by
 

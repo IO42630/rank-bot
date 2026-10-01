@@ -6,12 +6,18 @@
 
 ## Acceptance criteria
 
-- [ ] Fake-worker and browser integration tests process multiple challenges in discovery order.
-- [ ] Only one challenge is active at a time, and workflow transitions are persisted.
-- [ ] Unsupported challenges and approval rejection continue to the next challenge.
-- [ ] Worker outage and login or access blocks pause safely.
-- [ ] The summary distinguishes accepted, skipped, and unresolved outcomes.
-- [ ] Sample success is never reported as acceptance.
+- [x] Fake-worker and browser integration tests process multiple challenges in discovery order.
+- [x] Only one challenge is active at a time, and workflow transitions are persisted.
+- [x] Unsupported challenges and approval rejection continue to the next challenge.
+- [x] Worker outage and login or access blocks pause safely.
+- [x] The summary distinguishes accepted, skipped, and unresolved outcomes.
+- [x] Sample success is never reported as acceptance.
+
+## Implementation status
+
+Offline acceptance verified by `ChallengeRunnerTest` and `FileSolverTest`.
+Browser CLI wiring is implemented; a real track-to-agent smoke run remains gated by authorized
+HackerRank UI adaptation and a configured local-agent wrapper.
 
 ## Blocked by
 
