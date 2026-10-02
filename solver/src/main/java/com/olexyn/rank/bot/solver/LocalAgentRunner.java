@@ -35,10 +35,10 @@ public class LocalAgentRunner {
 
 	public String solve(String text) {
 		if (text == null || text.isBlank()) {
-			throw new BadRequestException("Text is required");
+			throw new BadRequestException();
 		}
 		String key = apiKey.filter(value -> !value.isBlank())
-				.orElseThrow(() -> new WebApplicationException("DEEPSEEK_API_KEY is not configured", 503));
+				.orElseThrow(() -> new WebApplicationException(503));
 		try {
 			String body = mapper.writeValueAsString(Map.of(
 					"model", model, "stream", false,
@@ -51,20 +51,20 @@ public class LocalAgentRunner {
 					.POST(HttpRequest.BodyPublishers.ofString(body)).build();
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 			if (response.statusCode() != 200) {
-				throw new WebApplicationException("DeepSeek request failed", 502);
+				throw new WebApplicationException(502);
 			}
 			var content = mapper.readTree(response.body()).path("choices").path(0).path("message").path("content");
 			if (!content.isTextual() || content.asText().isBlank()) {
-				throw new WebApplicationException("DeepSeek returned no reply", 502);
+				throw new WebApplicationException(502);
 			}
 			return content.asText();
 		} catch (HttpTimeoutException exception) {
-			throw new WebApplicationException("DeepSeek request timed out", 504);
+			throw new WebApplicationException(exception, 504);
 		} catch (IOException exception) {
-			throw new WebApplicationException("DeepSeek response could not be read", 502);
+			throw new WebApplicationException(exception, 502);
 		} catch (InterruptedException exception) {
 			Thread.currentThread().interrupt();
-			throw new WebApplicationException("DeepSeek request interrupted", 503);
+			throw new WebApplicationException(exception, 503);
 		}
 	}
 }

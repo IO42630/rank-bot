@@ -24,6 +24,8 @@ install_skill() {
 install_skill "https://github.com/io42630/skills" "plexy-markdown"
 install_skill "https://github.com/io42630/skills" "plexy-do-less"
 install_skill "https://github.com/io42630/skills" "plexy-tickets"
+install_skill "https://github.com/io42630/skills" "plexy-java"
+install_skill "https://github.com/io42630/skills" "plexy-smooth"
 
 # 2. Keep the root clean: move any generated lockfiles into .agents/
 for lockfile in .skills.json skills-lock.json; do
