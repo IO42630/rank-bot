@@ -1,0 +1,23 @@
+### Local solver smoke test: start with DEEPSEEK_MODEL='deepseek-flash'.
+POST http://127.0.0.1:8080/solve
+Content-Type: text/plain; charset=utf-8
+Accept: text/plain
+
+Hi. What model are you?
+
+### Direct DeepSeek Flash request: export DEEPSEEK_API_KEY for the IDE HTTP client.
+# /chat/completions accepts messages; "deepseek-flash" is the model, not an endpoint.
+POST https://api.deepseek.com/chat/completions
+Content-Type: application/json
+Authorization: Bearer {{$env.DEEPSEEK_API_KEY}}
+
+{
+  "model": "deepseek-flash",
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+  ],
+  "thinking": {"type": "enabled"},
+  "reasoning_effort": "high",
+  "stream": false
+}

@@ -1,7 +1,7 @@
 package io42630.rankbot.cli;
 
 import java.util.concurrent.Callable;
-import java.nio.file.Path;
+import java.net.URI;
 import java.nio.file.StandardOpenOption;
 import java.nio.channels.FileChannel;
 import java.time.Duration;
@@ -13,18 +13,15 @@ import picocli.CommandLine.*;
 public final class WorkerCommand implements Callable<Integer> {
 	@Mixin
 	public CommonOptions common;
-	@Option(names = "--agent-config", required = true)
-	public Path agentConfig;
-	@Option(names = "--scratch", defaultValue = "runtime/worker-scratch")
-	public Path scratch;
+	@Option(names = "--solver-url", defaultValue = "http://127.0.0.1:8080/solve")
+	public URI solverUrl;
 	@Option(names = "--once", description = "Process at most one available job, then exit")
 	public boolean once;
 
 	@Override
 	public Integer call() throws Exception {
-		var config = LocalAgentRunner.Config.load(agentConfig);
 		var store = common.store();
-		var runner = new LocalAgentRunner(config, scratch, Duration.ofMillis(common.leaseSeconds * 1000 / 3));
+		var runner = new LocalAgentRunner(solverUrl, Duration.ofMillis(common.leaseSeconds * 1000 / 3));
 		try (var channel = FileChannel.open(
 				common.jobs.resolve(".worker.lock"),
 				StandardOpenOption.CREATE,

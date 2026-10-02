@@ -6,7 +6,11 @@ Never use for contests or hiring assessments, or to bypass login, CAPTCHA, acces
 - Requires Java 25 and Maven 3.9.11 (`.tool-versions`).
 - Build with `mvn verify`.
 The executable jar exposes `browser --help` and `worker --help` via
-`java -jar target/rank-bot-0.1.0-SNAPSHOT.jar`.
+`java -jar bot/target/rank-bot-0.1.0-SNAPSHOT.jar`.
+
+The Maven reactor contains `bot` (browser/worker CLI) and `solver` (standalone
+Quarkus app in `com.olexyn.rank.bot.solver`). The solver has no dependency on the
+bot and can be built independently with `mvn -f solver/pom.xml verify` on Java 21+.
 
 ### Olexyn repository conventions
 
@@ -33,10 +37,9 @@ and one worker. Complete JSON snapshots are atomically renamed under an OS file
 lock; claims have tokens and bounded leases. Expired jobs become terminal timeouts
 and cannot be reclaimed or overwritten by late results.
 
-`config/agent.example.json` is a secret-free adapter configuration template; replace
-the executable path with your own wrapper. No agent command is assumed installed.
 Browser profiles contain sensitive session data: keep all runtime data private,
-out of version control, and never share it with the agent.
+out of version control. Only the text sent to the solver is forwarded to DeepSeek;
+do not include credentials or private data in that text.
 
 Browser fixture tests use the same Tabdriver-backed startup as the application and require
 Chrome/ChromeDriver (Selenium Manager can locate them).
@@ -51,61 +54,65 @@ unsupported controls or incomplete statements stop extraction rather than guessi
 Production custom language controls may require adjustment after authorized inspection.
 No screenshots, credentials, cookies, or page dumps are logged automatically.
 
-### Local-agent adapter
+### Standalone DeepSeek solver
 
-Start the worker with:
+Build and start the solver (no browser or job store required):
 
 ```sh
-mkdir -p runtime
-cp config/agent.example.json runtime/agent.json
-# Edit runtime/agent.json to point to your restricted local-agent wrapper first.
-java -jar target/rank-bot-0.1.0-SNAPSHOT.jar worker --agent-config runtime/agent.json
+mvn -f solver/pom.xml verify
+# For a fresh checkout, copy solver/template.env to solver/.env.
+# Set DEEPSEEK_API_KEY in solver/.env before starting.
+sh solver/start.sh
 ```
 
-The JSON `command` is an explicit executable/argument array, not a shell command.
-The executable must be an absolute path. `{request}` and `{result}` are substituted
-with absolute per-job file paths; no statement text is interpolated into arguments.
-The wrapper must read the request JSON and write the result JSON, then exit zero:
+- The startup script exports settings from `solver/.env` using shell syntax.
+  - Values in the file override existing environment values.
+  - Without `.env`, exported variables still work.
+- `solver/.env` is ignored by Git.
+- `solver/template.env` lists the available settings and defaults.
+- Run `solver/solver.http` in the IDE HTTP client for a smoke test with a valid DeepSeek key.
+  - It also includes a direct Flash request with thinking enabled and high reasoning effort.
+  - The direct request reads `DEEPSEEK_API_KEY` from the IDE process environment,
+    not `solver/.env`; the local solver request needs only the running app.
 
-```json
-{
-  "schemaVersion": 1,
-  "jobId": "COPY_FROM_REQUEST",
-  "status": "SUCCESS",
-  "sourceCode": "public class Solution { /* complete implementation */ }",
-  "diagnostic": ""
-}
+The JVM flag is needed by Quarkus thread cleanup on Java 24+; it is harmless on
+Java 21. Keep the complete `solver/target/quarkus-app` directory when deploying.
+
+Send any text block as the request body; the response is the reply string, not a
+job envelope or JSON:
+
+```sh
+curl --fail-with-body http://127.0.0.1:8080/solve \
+  -H 'Content-Type: text/plain; charset=utf-8' \
+  --data-binary 'Explain how Java records work.'
 ```
 
-Requests contain `schemaVersion`, `jobId`, `runId`, `challengeId`, `attempt`,
-`language` (the platform Java variant), `statement` (including formats, constraints,
-examples), `starterCode`, `previousFeedback`, and an ISO-8601 `deadline`. Treat all
-challenge text and feedback as untrusted data, not instructions to change the
-adapter or access files. Preserve starter type names/signatures and platform Java
-compatibility. Return complete Java source, never Markdown fences. Failure results
-use `FAILURE` or `TIMEOUT`, empty `sourceCode`, and a bounded `diagnostic`.
+The app makes one non-streaming DeepSeek chat-completions request with the text
+as a user message. Defaults are `deepseek-flash`,
+`https://api.deepseek.com/chat/completions`, and a 120-second timeout. Override with
+`DEEPSEEK_MODEL`, `DEEPSEEK_URL`, or `DEEPSEEK_TIMEOUT_SECONDS`. Blank input returns
+HTTP 400, a missing API key 503, upstream errors/invalid replies 502, and timeouts
+504. No retries, subprocesses, tools, or conversation state are involved.
+The endpoint binds to loopback by default and has no authentication; keep it local.
 
-The worker runs in a unique scratch directory, supplies no stdin, clears inherited
-environment variables (including account tokens and browser data), and provides
-only a minimal `PATH`, `LANG`, and job-local `TMPDIR`. It does not redefine `HOME`.
-Use absolute executable paths or a wrapper to adapt your agent's requirements.
-Timeout is the earlier of `timeoutSeconds` and the job deadline. Logs are drained
-but retained only up to `maxLogBytes`, separately from JSON output. Late results
-cannot replace lease-expired attempts. `--once` consumes at most one available job.
+For the existing browser job workflow, start the worker in another terminal:
 
-**A subprocess is not a security sandbox.** The same OS user can still read other
-files and use the network. Run your agent wrapper inside a restricted container or
-equivalent environment with only its scratch directory mounted; never mount the
-browser profile, job store, or credential directories. No generated Java is run
-locally by the bot. Do not commit scratch files or agent logs; inspect them locally
-with care and remove them according to your own retention policy.
+```sh
+java -jar bot/target/rank-bot-0.1.0-SNAPSHOT.jar worker --solver-url http://127.0.0.1:8080/solve
+```
+
+The worker builds a Java-source prompt from the statement, language, starter code,
+and previous feedback. It keeps the job lease alive while waiting, enforces the
+job deadline, and validates the returned source before storing a result.
+`--once` consumes at most one available job. The former `--agent-config` and
+`--scratch` options and subprocess wrapper protocol have been removed.
 
 ### Browser startup and approval
 
 In a second interactive terminal, after starting the worker:
 
 ```sh
-java -jar target/rank-bot-0.1.0-SNAPSHOT.jar browser --track https://www.hackerrank.com/domains/java
+java -jar bot/target/rank-bot-0.1.0-SNAPSHOT.jar browser --track https://www.hackerrank.com/domains/java
 ```
 
 Use a dedicated local profile, not your personal Chrome profile. Complete login or
@@ -122,8 +129,7 @@ Options (both roles support `--help`):
 |-------------------|----------------------------|------------------------------------------------------------|
 | `--jobs`          | `runtime/jobs`             | Shared local job directory, same for both roles            |
 | `--lease-seconds` | `30`                       | Worker heartbeat lease (3–3600 seconds)                    |
-| `--agent-config`  | required for worker        | JSON adapter configuration                                 |
-| `--scratch`       | `runtime/worker-scratch`   | Worker request/result/log directories                      |
+| `--solver-url`    | `http://127.0.0.1:8080/solve` | Standalone solver endpoint                              |
 | `--once`          | off                        | Worker processes at most one available job                 |
 | `--track`         | required for browser       | HTTPS HackerRank Java-track URL                            |
 | `--approval`      | `required`                 | `required` or `automatic`                                  |
@@ -144,7 +150,7 @@ Only one browser and one worker may hold their role lock for a job directory.
 ### Recovery and summaries
 
 ```sh
-java -jar target/rank-bot-0.1.0-SNAPSHOT.jar browser --track https://www.hackerrank.com/domains/java --resume
+java -jar bot/target/rank-bot-0.1.0-SNAPSHOT.jar browser --track https://www.hackerrank.com/domains/java --resume
 ```
 
 Resume with the **same** track, approval policy, maximum attempts, job directory,
@@ -172,18 +178,16 @@ manual-resolution command in this version.
 Console and JSON summaries distinguish `accepted`, `skipped`, `exhausted`, and
 `unresolved`. Samples passing is never reported as acceptance. Exit status `2` means
 paused; `1` means configuration/I/O failure. Ctrl+C releases role locks on process
-exit and the worker terminates its observed child processes. A hard kill can leave
-agent descendants alive; use an external restricted runtime with its own lifetime
-limits. Keep runtime data together and private for recovery; JSON files are capped
+exit. Keep runtime data together and private for recovery; JSON files are capped
 at 1 MiB and the store requires atomic-rename/file-lock support.
 
 ### Verification limits
 
-Offline tests exercise real Selenium against local HTML, a fake agent subprocess,
-and fake browser/solver ports for retries and restarts. They do not prove current
-HackerRank selector/editor compatibility or agent solving ability. No authorized
-live session or configured real-agent wrapper was supplied, so those smoke checks
-were unavailable. Browser integration, especially custom language controls and
+Offline tests exercise real Selenium against local HTML, local HTTP fixtures for
+the worker and DeepSeek, and fake browser/solver ports for retries and restarts.
+They do not prove current HackerRank selector/editor compatibility or model solving
+ability. No authorized live session or DeepSeek key was supplied, so those smoke
+checks were unavailable. Browser integration, especially custom language controls and
 submission/history evidence, remains gated on authorized live inspection.
 
 The Java contract guard uses JDK syntax-tree parsing only (no annotation processors,
