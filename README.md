@@ -3,9 +3,28 @@
 Java-first HackerRank **practice-only** automation with a separate local solver worker.
 Never use for contests or hiring assessments, or to bypass login, CAPTCHA, access restrictions, or throttling.
 
-Requires Java 25 and Maven 3.9.9 (`.tool-versions`). Build with `mvn verify`.
+- Requires Java 25 and Maven 3.9.11 (`.tool-versions`).
+- Build with `mvn verify`.
 The executable jar exposes `browser --help` and `worker --help` via
 `java -jar target/rank-bot-0.1.0-SNAPSHOT.jar`.
+
+### Olexyn repository conventions
+
+- Maven coordinates are `com.olexyn:rank-bot:0.1.0-SNAPSHOT`.
+- The parent is `com.olexyn:min-root:25.0.3`, matching Tabdriver.
+  - Java settings and managed compiler/test plugin versions come from the parent.
+- Dependency management imports `com.olexyn:min-bom:25.1.1`, matching Tabdriver.
+  - Dependencies outside that BOM retain explicit versions.
+- Selenium uses Tabdriver's `xx.selenium.version` convention and version `4.49.0`.
+- The intended Java package is `com.olexyn.rankbot`.
+  - Package migration is pending because the required package-refactoring operation was unavailable.
+  - The existing `io42630.rankbot` entry point remains valid until that migration.
+- Browser sessions are created and owned by `com.olexyn:tabdriver:1.5.1`.
+  - Configuration extends `DefaultTabDriverConfig`, following the upstream test example.
+  - Selenium's driver discovery supplies the executable path required by Tabdriver.
+  - `switchTo().defaultContent()` provides the owned WebDriver for explicit waits and editor scripts.
+  - Tabdriver's script methods remain stubs in this release; scripts use the owned WebDriver instead.
+  - Certificate validation stays enabled, implicit waits are reset to zero, and shutdown calls wrapper `quit()` once.
 
 Defaults: `--jobs runtime/jobs`, `--lease-seconds 30`; browser approval is `required`,
 and `--max-attempts` accepts only 2 or 3 (default 3). Runtime files and local tools
@@ -19,7 +38,8 @@ the executable path with your own wrapper. No agent command is assumed installed
 Browser profiles contain sensitive session data: keep all runtime data private,
 out of version control, and never share it with the agent.
 
-Browser fixture tests require Chrome/ChromeDriver (Selenium Manager can locate them).
+Browser fixture tests use the same Tabdriver-backed startup as the application and require
+Chrome/ChromeDriver (Selenium Manager can locate them).
 For explicit binaries, pass `-Drankbot.chrome=/path/to/chrome` and
 `-Dwebdriver.chrome.driver=/path/to/chromedriver` to Maven. Tests use headless Chrome
 only for local HTML; the application always opens a visible browser.

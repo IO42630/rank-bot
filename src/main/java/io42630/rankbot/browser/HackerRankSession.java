@@ -8,9 +8,8 @@ import java.time.Duration;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.olexyn.tabdriver.TabDriver;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public final class HackerRankSession implements AutoCloseable {
@@ -20,12 +19,18 @@ public final class HackerRankSession implements AutoCloseable {
 	private final boolean fixture;
 	private final AtomicBoolean closed = new AtomicBoolean();
 	private final Thread shutdown;
+	private final Runnable quit;
 
 	public HackerRankSession(WebDriver driver, Duration timeout, BooleanSupplier handoff, boolean fixture) {
+		this(driver, timeout, handoff, fixture, driver::quit);
+	}
+
+	private HackerRankSession(WebDriver driver, Duration timeout, BooleanSupplier handoff, boolean fixture, Runnable quit) {
 		if (timeout.isZero() || timeout.isNegative()) {
 			throw new IllegalArgumentException("Positive browser timeout required");
 		}
 		this.driver = driver;
+		this.quit = quit;
 		this.timeout = timeout;
 		this.handoff = handoff;
 		this.fixture = fixture;
@@ -53,13 +58,29 @@ public final class HackerRankSession implements AutoCloseable {
 
 	public static HackerRankSession open(Path profile, Duration timeout, BooleanSupplier handoff, Path binary)
 			throws IOException {
-		JsonFiles.privateDirectory(profile);
-		ChromeOptions options = new ChromeOptions();
-		if (binary != null) {
-			options.setBinary(binary.toFile());
+		return open(profile, timeout, handoff, binary, false);
+	}
+
+	static HackerRankSession open(Path profile, Duration timeout, BooleanSupplier handoff, Path binary, boolean fixture)
+			throws IOException {
+		if (timeout.isZero() || timeout.isNegative()) {
+			throw new IllegalArgumentException("Positive browser timeout required");
 		}
-		options.addArguments("--user-data-dir=" + profile.toAbsolutePath());
-		return new HackerRankSession(new ChromeDriver(options), timeout, handoff, false);
+		JsonFiles.privateDirectory(profile);
+		JsonFiles.privateDirectory(profile.resolve("downloads"));
+		var tabDriver = new TabDriver(new RankBotTabDriverConfig(profile, binary, fixture));
+		try {
+			return new HackerRankSession(
+					tabDriver.switchTo().defaultContent(), timeout, handoff, fixture, tabDriver::quit
+			);
+		} catch (RuntimeException | Error exception) {
+			try {
+				tabDriver.quit();
+			} catch (RuntimeException cleanup) {
+				exception.addSuppressed(cleanup);
+			}
+			throw exception;
+		}
 	}
 
 	public WebDriver driver() {
@@ -131,7 +152,7 @@ public final class HackerRankSession implements AutoCloseable {
 			return;
 		}
 		try {
-			driver.quit();
+			quit.run();
 		} finally {
 			if (shutdown != null && Thread.currentThread() != shutdown) {
 				try {

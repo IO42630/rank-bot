@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
@@ -12,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.HasCapabilities;
+import org.openqa.selenium.NoSuchSessionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,21 +24,22 @@ class BrowserFixtureTest {
 	@TempDir
 	Path directory;
 	WebDriver driver;
+	HackerRankSession browser;
 
 	@BeforeEach
-	void open() {
-		ChromeOptions options = new ChromeOptions().addArguments("--headless=new", "--disable-dev-shm-usage");
+	void open() throws Exception {
 		String binary = System.getProperty("rankbot.chrome");
-		if (binary != null) {
-			options.setBinary(binary);
-		}
-		driver = new ChromeDriver(options);
+		browser = HackerRankSession.open(
+				directory.resolve("profile"), Duration.ofSeconds(1), () -> false,
+				binary == null ? null : Path.of(binary), true
+		);
+		driver = browser.driver();
 	}
 
 	@AfterEach
 	void close() {
-		if (driver != null) {
-			driver.quit();
+		if (browser != null) {
+			browser.close();
 		}
 	}
 
@@ -49,7 +51,51 @@ class BrowserFixtureTest {
 	}
 
 	HackerRankSession session() {
-		return new HackerRankSession(driver, Duration.ofSeconds(1), () -> false, true);
+		return browser;
+	}
+
+	@Test
+	void productionConfigurationKeepsVisiblePrivateProfileAndExplicitBinary() {
+		String binary = System.getProperty("rankbot.chrome");
+		Path profile = directory.resolve("production-profile");
+		var config = new RankBotTabDriverConfig(profile, binary == null ? null : Path.of(binary), false);
+		assertEquals(false, config.isHeadless());
+		assertEquals(false, config.getOptions().getCapability("acceptInsecureCerts"));
+		assertTrue(Files.isExecutable(config.getDriverPath()));
+		assertEquals(profile.toAbsolutePath().resolve("downloads").toString(), config.getDownloadDir());
+		var chrome = (Map<?, ?>) config.getOptions().getCapability("goog:chromeOptions");
+		var args = (List<?>) chrome.get("args");
+		assertTrue(args.contains("--user-data-dir=" + profile.toAbsolutePath()));
+		assertTrue(args.stream().noneMatch(arg -> arg.toString().startsWith("--headless")));
+		if (binary != null) {
+			assertEquals(binary, chrome.get("binary"));
+		}
+	}
+
+	@Test
+	void invalidTimeoutFailsBeforeCreatingProfileOrBrowser() {
+		Path profile = directory.resolve("invalid-profile");
+		assertThrows(IllegalArgumentException.class, () -> HackerRankSession.open(
+				profile, Duration.ZERO, () -> false
+		));
+		assertEquals(false, Files.exists(profile));
+	}
+
+	@Test
+	void wrapperSessionPreservesTimeoutsScriptsSecurityAndSingleClose() throws Exception {
+		assertEquals(Duration.ZERO, driver.manage().timeouts().getImplicitWaitTimeout());
+		assertEquals(Duration.ofSeconds(1), driver.manage().timeouts().getPageLoadTimeout());
+		assertEquals(Duration.ofSeconds(1), driver.manage().timeouts().getScriptTimeout());
+		assertEquals(false, ((HasCapabilities) driver).getCapabilities().getCapability("acceptInsecureCerts"));
+		browser.navigate(fixture("scripts.html", "<div>ready</div>").toUri().toString());
+		var scripts = (JavascriptExecutor) driver;
+		assertEquals("argument", scripts.executeScript("return arguments[0]", "argument"));
+		assertEquals("callback", scripts.executeAsyncScript(
+				"arguments[arguments.length-1](arguments[0])", "callback"
+		));
+		browser.close();
+		browser.close();
+		assertThrows(NoSuchSessionException.class, driver::getTitle);
 	}
 
 	@Test

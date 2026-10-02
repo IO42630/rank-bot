@@ -40,7 +40,7 @@ solutions are tested through HackerRank; do not add an unsandboxed local executi
 
 ### Repository baseline
 - `README.md` contains only the project title; no application or analogous implementation exists.
-- `.tool-versions` specifies Java `temurin-25` and Maven `3.9.9`, plus Node 22. Use Java/Maven for both application
+- `.tool-versions` specifies Java `temurin-25` and Maven `3.9.11`, plus Node 22. Use Java/Maven for both application
   roles; generated code must target the Java runtime offered by HackerRank, not assume Java 25.
 - `skills.sh:11–26` installs development skills; it is not a solver integration and remains unchanged.
 - `.gitignore` excludes `.idea/`, `.agents/skills/`, and `.agents/skills-lock.json`; add exclusions for build output,
@@ -48,7 +48,7 @@ solutions are tested through HackerRank; do not add an unsandboxed local executi
 
 ### Components and files
 
-Add `pom.xml` and standard Maven `src/main/java` and `src/test/java` layouts under package `io42630.rankbot`:
+Add `pom.xml` and standard Maven `src/main/java` and `src/test/java` layouts under package `com.olexyn.rankbot`:
 - `cli/BrowserCommand.java`, `cli/WorkerCommand.java`: separate browser and worker entry points, configuration
   validation, clean shutdown.
 - `browser/HackerRankSession.java`, `TrackPage.java`, `ChallengePage.java`, `CodeEditor.java`: Selenium page objects
@@ -326,3 +326,55 @@ A track run continues across failures, skips exhausted challenges, and resumes s
 - Generate a per-challenge run summary and document startup, flags, configuration, and recovery in `README.md`.
 - Test multi-challenge continuation, attempt accounting, and restart safety; run the Maven suite and perform a permitted
   live smoke check only when an authorized session is available.
+
+### ! Step 6: Align Olexyn package and Maven conventions
+
+- Migrate the application and tests to `com.olexyn.rankbot` using package refactoring.
+- Inherit `com.olexyn:min-root:25.0.3`.
+- Import `com.olexyn:min-bom:25.1.1`, matching Tabdriver's declared BOM.
+- Retain explicit versions for dependencies not managed by the shared BOM.
+- Align repository metadata and Maven toolchain with Tabdriver.
+- Maven alignment is implemented; package migration is blocked by unavailable package-refactoring support.
+
+### ✓ Step 7: Prepare the upstream Tabdriver integration patch
+
+- Supply a reviewable patch against Tabdriver commit `d096950ac0df9b477771533a70e5d931e06460b6`.
+- Expose the underlying driver for explicit waits and timeout management.
+- Delegate JavaScript execution to ChromeDriver instead of returning null.
+- Document integration and artifact-publication blockers without migrating browser code before review.
+
+### ✓ Step 8: Verify repository alignment
+
+- Run the Maven suite against the inherited build configuration.
+- Verify the executable JAR entry point after package refactoring.
+- Check the proposed upstream patch against its pinned source.
+- Report unavailable live verification and pending Tabdriver integration explicitly.
+- `mvn verify` passed 98 tests with Java 25 and Maven 3.9.11.
+- Both packaged CLI help commands passed with the existing entry point.
+- `git apply --check` passed against the pinned Tabdriver source.
+- Package migration remains blocked; live verification and upstream runtime tests were not performed.
+
+### ✓ Step 9: Adopt published Tabdriver 1.5.1
+
+- Fetch and inspect the published artifact and its actual browser configuration API.
+- Replace direct ChromeDriver construction with a wrapper-owned session, retaining secure certificates, profile/binary configuration, bounded timeouts, and single-close lifecycle.
+- Route local browser fixtures through Tabdriver and cover script delegation and timeout behavior.
+- Retry the pending package refactoring using the available rename operation.
+- Update integration documentation to reflect the published release and actual migration status.
+- Wrapper construction/configuration follows upstream tests; public `switchTo().defaultContent()` supplies the owned WebDriver without requiring the proposed getter patch.
+- Browser fixture startup now uses Tabdriver; focused tests passed, including script results, secure certificates, timeouts, and idempotent shutdown.
+- The package-refactoring retry reported that the rename operation is unavailable; the existing package and entry point remain unchanged.
+
+### ✓ Step 10: Verify the Tabdriver migration
+
+- Run the Maven suite and packaged browser/worker help commands.
+- Check dependency resolution and report any remaining package or live-verification limitations.
+- `mvn verify` passed 101 tests with Java 25 and Maven 3.9.11, including 11 wrapper-backed browser fixture tests; both packaged CLI help commands passed.
+- Dependency inspection confirmed `com.olexyn:tabdriver:1.5.1` and Selenium `4.49.0`; `git diff --check` passed.
+- Tabdriver browser adoption is complete. Package refactoring remains unavailable, and no authorized live session was supplied.
+
+### ✓ Step 11: Remove obsolete Tabdriver migration artifacts
+
+- Delete the unused upstream patch and its redundant integration document, removing the README link.
+- Remove the inspection-only downloaded Tabdriver JAR if still present; retain browser tooling, application files, tests, and historical plan records.
+- Verify removed artifacts have no remaining active references and check whitespace; no build is needed for artifact/documentation cleanup.
